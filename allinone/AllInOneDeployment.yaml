@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: allinone
+  labels:
+    app.kubernetes.io/name: allinone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: allinone
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: allinone
+    spec:
+      hostname: slurmctl
+      containers:
+      - name: allinone
+        image: 10.67.125.196:5000/all-in-one:1.0
+        command: ["/bin/sh", "-c"]
+        args: [ "/workspace/start_llm.sh && /tini -- /usr/local/bin/docker-entrypoint.sh"]
+        volumeMounts:
+          - mountPath: /var/fastchat 
+            name: results
+        ports:
+        - name: chatfile
+          containerPort: 8080
+        - name: chatapi
+          containerPort: 8000
+        - name: slurmrestd
+          containerPort: 6820
+        securityContext:
+          allowPrivilegeEscalation: true
+      volumes:
+        - name: results
+          hostPath:
+            path: /var/fastchat      # node path, must contains llm model
+            type: DirectoryOrCreate 
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: slurmctl
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: allinone
+  ports:
+    - port: 6820
+      targetPort: 6820
+      name: slurmrestd
+    - port: 8080
+      targetPort: 8080
+      name: chatfile
