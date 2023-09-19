@@ -15,14 +15,19 @@ spec:
         app.kubernetes.io/name: allinone
     spec:
       hostname: slurmctl
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeName: node
       containers:
       - name: allinone
-        image: 10.67.125.196:5000/all-in-one:1.0
+        imagePullPolicy: Always
+        image: 10.67.125.196:5000/all-in-one:1.1
         command: ["/bin/sh", "-c"]
         args: [ "/workspace/start_llm.sh && /tini -- /usr/local/bin/docker-entrypoint.sh"]
         volumeMounts:
           - mountPath: /var/fastchat 
             name: results
+
         ports:
         - name: chatfile
           containerPort: 8080
@@ -30,6 +35,8 @@ spec:
           containerPort: 8000
         - name: slurmrestd
           containerPort: 6820
+        - name: slurmctld
+          containerPort: 6817
         securityContext:
           allowPrivilegeEscalation: true
       volumes:
@@ -44,13 +51,19 @@ kind: Service
 metadata:
   name: slurmctl
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app.kubernetes.io/name: allinone
   ports:
     - port: 6820
       targetPort: 6820
+        #nodePort: 6820
       name: slurmrestd
     - port: 8080
+      # nodePort: 8080
       targetPort: 8080
       name: chatfile
+    - port: 6817
+      nodePort: 30001
+      targetPort: 6817
+      name: slurmctld

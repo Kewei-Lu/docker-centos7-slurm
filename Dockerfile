@@ -142,7 +142,7 @@ RUN set -ex \
 RUN dd if=/dev/random of=/etc/slurm/jwt_hs256.key bs=32 count=1 \
     && chmod 600 /etc/slurm/jwt_hs256.key && chown slurm.slurm /etc/slurm/jwt_hs256.key
 
-COPY --chown=slurm files/slurm/slurm.conf files/slurm/gres.conf files/slurm/slurmdbd.conf /etc/slurm/
+COPY --chown=slurm files/slurm/slurm.conf files/slurm/gres.conf files/slurm/slurmdbd.conf files/slurm/cgroup.conf /etc/slurm/
 COPY files/supervisord.conf /etc/
 
 RUN chmod 0600 /etc/slurm/slurmdbd.conf
@@ -154,6 +154,14 @@ COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # Copy Nginx Config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy Munge key
+RUN cp /etc/munge/munge.key /usr/share/nginx/html/
+RUN chmod 644 /usr/share/nginx/html/munge.key
+
+
+ENV no_proxy=localhost,127.0.0.1
+
 
 ENTRYPOINT ["/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/bin/bash"]

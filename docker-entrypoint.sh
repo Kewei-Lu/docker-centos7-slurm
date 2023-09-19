@@ -90,6 +90,7 @@ echo "- Starting supervisord process manager"
 
 
 for service in munged mysqld slurmdbd slurmctld slurmd slurmrestd
+# for service in munged mysqld slurmdbd slurmctld slurmrestd
 do
     start_service $service
 done
@@ -99,15 +100,15 @@ do
     check_port_status $port
 done
 
-echo "- Waiting for the cluster to become available"
-for count in {10..0}; do
-    if ! grep -q "normal.*idle" <(timeout 1 sinfo)
-    then
-        sleep 1
-    else
-        break
-    fi
-done
+# echo "- Waiting for the cluster to become available"
+# for count in {10..0}; do
+#     if ! grep -q "normal.*idle" <(timeout 1 sinfo)
+#     then
+#         sleep 1
+#     else
+#         break
+#     fi
+# done
 
 error_with_msg "Slurm partitions failed to start successfully."
 
@@ -116,5 +117,6 @@ echo "- Cluster is now available"
 echo "start Nginx"
 
 /usr/sbin/nginx -g "daemon off;"
+# /usr/sbin/nginx
 
 # exec "$@"

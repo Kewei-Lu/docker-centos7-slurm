@@ -1,4 +1,4 @@
-FROM docker-centos7-slurm:21.08.8
+FROM docker-centos7-slurm:23.02.5
 USER root
 WORKDIR /workspace
 
