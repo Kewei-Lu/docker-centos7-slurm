@@ -27,10 +27,13 @@ spec:
         volumeMounts:
           - mountPath: /var/fastchat 
             name: results
-
+          - mountPath: "/tmp"
+            name: job-result
         ports:
         - name: chatfile
           containerPort: 8080
+        - name: munge
+          containerPort: 80
         - name: chatapi
           containerPort: 8000
         - name: slurmrestd
@@ -44,7 +47,11 @@ spec:
           hostPath:
             path: /var/fastchat      # node path, must contains llm model
             type: DirectoryOrCreate 
-
+        - name: job-result
+          hostPath:
+            path: /nfs/data      # node path, must contains llm model
+            type: Directory
+ 
 ---
 apiVersion: v1
 kind: Service
@@ -67,3 +74,7 @@ spec:
       nodePort: 30001
       targetPort: 6817
       name: slurmctld
+    - port: 80
+      nodePort: 30002
+      targetPort: 80
+      name: munge

@@ -155,6 +155,10 @@ COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # Copy Nginx Config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# workaround: nginx will not refresh files in static directory unless `ls` it
+COPY files/refresh_tmp.sh /usr/local/refresh_tmp.sh
+RUN chmod +x /usr/local/refresh_tmp.sh
+
 # Copy Munge key
 RUN cp /etc/munge/munge.key /usr/share/nginx/html/
 RUN chmod 644 /usr/share/nginx/html/munge.key

@@ -100,19 +100,22 @@ do
     check_port_status $port
 done
 
-# echo "- Waiting for the cluster to become available"
-# for count in {10..0}; do
-#     if ! grep -q "normal.*idle" <(timeout 1 sinfo)
-#     then
-#         sleep 1
-#     else
-#         break
-#     fi
-# done
+echo "- Waiting for the cluster to become available"
+for count in {10..0}; do
+    if ! grep -q "f1Feature.*idle" <(timeout 1 sinfo)
+    then
+        sleep 1
+    else
+        break
+    fi
+done
 
 error_with_msg "Slurm partitions failed to start successfully."
 
 echo "- Cluster is now available"
+
+echo "refreshing /tmp"
+nohup bash -c /usr/local/refresh_tmp.sh 1>/dev/null 2>&1 &
 
 echo "start Nginx"
 
