@@ -74,6 +74,14 @@ PartitionName=normal
    DefMemPerCPU=500 MaxMemPerNode=UNLIMITED
 ```
 
+### Slurm Dynamic Nodes
+
+Since Slurm 22.05, nodes can be dynamically added and removed from Slurm.
+
+#### Usage
+
+
+
 ## Building
 
 ### Using Existing Tags

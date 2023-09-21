@@ -66,6 +66,7 @@ def test_submit_job(host, container_ip, fetch_user_and_auth_token, api_version):
                 "standard_output": standard_output,
                 "name": f"job-{username}",
                 "environment": {"PATH": os.getenv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin")},
+                "current_working_directory": '/tmp',
             },
         },
         separators=(",", ":"),
