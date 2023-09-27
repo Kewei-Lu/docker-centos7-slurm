@@ -3,8 +3,8 @@ USER root
 WORKDIR /workspace
 
 VOLUME ["/var/fastchat"]
-RUN ulimit -n 1024000 && yum install -y python3 python3-pip
-RUN pip3 install "fschat[model_worker,webui]"
+RUN ulimit -n 1024000 && yum --disablerepo=updates install -y python3 python3-pip
+RUN pip3 install "fschat[model_worker,webui]" -i https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip3 install --upgrade openai
 
 

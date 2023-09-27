@@ -1,3 +1,9 @@
+FROM golang:1.19 as build 
+WORKDIR /app
+ARG GIT_TOKEN
+RUN git clone https://$GIT_TOKEN@github.com/Kewei-Lu/OpenCloud.git --branch kubecon_demo
+RUN cd OpenCloud/solution/Elastic-HPC/agent && echo "current commit $(git rev-parse --short HEAD)" && go build -o /app/ehpc-agent main.go
+
 FROM centos:7.9.2009
 
 LABEL org.opencontainers.image.source="https://github.com/giovtorres/docker-centos7-slurm" \
@@ -158,6 +164,9 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # workaround: nginx will not refresh files in static directory unless `ls` it
 COPY files/refresh_tmp.sh /usr/local/refresh_tmp.sh
 RUN chmod +x /usr/local/refresh_tmp.sh
+
+# ehpc-agent
+COPY --from=build /app/ehpc-agent /ehpc/ehpc-agent
 
 # Copy Munge key
 RUN cp /etc/munge/munge.key /usr/share/nginx/html/

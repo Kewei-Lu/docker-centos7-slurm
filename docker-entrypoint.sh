@@ -116,10 +116,15 @@ echo "- Cluster is now available"
 
 echo "refreshing /tmp"
 nohup bash -c /usr/local/refresh_tmp.sh 1>/dev/null 2>&1 &
+echo "refreshing /tmp started"
+
+echo "start ehpc-agent"
+# cluster UUID: 123456
+nohup /ehpc/ehpc-agent -c 123456 -i 10.67.125.83 -p 55001 -v 1>/ehpc/agent.log 2>&1 &
 
 echo "start Nginx"
 
 /usr/sbin/nginx -g "daemon off;"
 # /usr/sbin/nginx
 
-# exec "$@"
+# exec "$@"+
