@@ -16,13 +16,13 @@ It works fine with `slurm 23.02.5`, for other version of `slurm`, the feasibilit
 Pull the codes, build the image.
 
 ```shell
-docker docker build --build-arg SLURM_TAG="slurm-23-02-5-1" -t  docker-centos7-slurm:confless
+docker docker build --build-arg SLURM_TAG="slurm-23-02-5-1" -t  docker-slurm:dynamic
 ```
 
 Run the image, map the port for `slurmctld` inside container to host to test the nodes' dynamic join the cluster.
 
 ```bash
-docker run -it -h slurmctl -p 38125:6817 --cap-add sys_admin docker-centos7-slurm:confless
+docker run -it -h slurmctl -p 38125:6817 --cap-add sys_admin docker-slurm:dynamic
 ```
 
 After everything is up, you can see the slurm cluster status:
