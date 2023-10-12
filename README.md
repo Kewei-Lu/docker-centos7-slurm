@@ -1,168 +1,62 @@
-# Slurm on CentOS 7 Docker Image
+# Slurm on CentOS 7 Docker Image with Confless and Dynamic Nodes
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/giovtorres/docker-centos7-slurm.svg)](https://hub.docker.com/r/giovtorres/docker-centos7-slurm/)
+An extended slurm all-in-one docker images based on [docker-centos7-slurm](https://github.com/giovtorres/docker-centos7-slurm).
 
-This is an all-in-one [Slurm](https://slurm.schedmd.com/) installation.  This
-container runs the following processes:
+It enables [Configless](https://slurm.schedmd.com/configless_slurm.html) and [Dynamic Nodes](https://slurm.schedmd.com/dynamic_nodes.html) to get rid of config files in compute nodes and pre-allocation of compute nodes.
 
-* slurmd (The compute node daemon for Slurm)
-* slurmctld (The central management daemon of Slurm)
-* slurmdbd (Slurm database daemon)
-* slurmrestd (Slurm REST API daemon)
-* munged (Authentication service for creating and validating credentials)
-* mariadb (MySQL compatible database)
-* supervisord (A process control system)
+It works fine with `slurm 23.02.5`, for other version of `slurm`, the feasibility is not guaranteed. 
+## Requirement
 
-It also has the following Python versions installed using
-[pyenv](https://github.com/pyenv/pyenv):
+* `Slurm` requires `22.05` or later, we use `23.02` in quickstart
+* `Openssl` with `1.1.1s` (original `1.1.1l` not works, no other versions are tested yet)
 
-* 3.6.15
-* 3.7.12
-* 3.8.12
-* 3.9.9
-* 3.10.0
+## QuickStart
 
-## Usage
 
-There are multiple
-[tags](https://hub.docker.com/r/giovtorres/docker-centos7-slurm/tags/)
-available.  To use the latest available image, run:
+Pull the codes, build the image.
 
 ```shell
-docker pull giovtorres/docker-centos7-slurm:latest
-docker run -it -h slurmctl --cap-add sys_admin giovtorres/docker-centos7-slurm:latest
+docker docker build --build-arg SLURM_TAG="slurm-23-02-5-1" -t  docker-centos7-slurm:confless
 ```
 
-The above command will drop you into a bash shell inside the container. Tini
-is responsible for `init` and supervisord is the process control system . To
-view the status of all the processes, run:
+Run the image, map the port for `slurmctld` inside container to host to test the nodes' dynamic join the cluster.
 
-```shell
-[root@slurmctl /]# supervisorctl status
-munged                           RUNNING   pid 23, uptime 0:02:35
-mysqld                           RUNNING   pid 24, uptime 0:02:35
-slurmctld                        RUNNING   pid 25, uptime 0:02:35
-slurmd                           RUNNING   pid 22, uptime 0:02:35
-slurmdbd                         RUNNING   pid 26, uptime 0:02:35
-slurmrestd                       RUNNING   pid 456, uptime 0:02:00
+```bash
+docker run -it -h slurmctl -p 38125:6817 --cap-add sys_admin docker-centos7-slurm:confless
 ```
 
-In `slurm.conf`, the **ControlMachine** hostname is set to **slurmctl**. Since
-this is an all-in-one installation, the hostname must match **ControlMachine**.
-Therefore, you must pass the `-h slurmctl` to docker at run time so that the
-hostnames match.
-
-You can run the usual Slurm commands:
+After everything is up, you can see the slurm cluster status:
 
 ```shell
 [root@slurmctl /]# sinfo
 PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
-normal*      up 5-00:00:00      5   idle c[1-5]
-debug        up 5-00:00:00      5   idle c[6-10]
+debug        up 5-00:00:00      2   idle c[3-4]
+normal*      up 5-00:00:00      2   idle c[1-2]
+f1Feature    up   infinite      0    n/a
 ```
 
-```shell
-[root@slurmctl /]# scontrol show partition normal
-PartitionName=normal
-   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL
-   AllocNodes=ALL Default=YES QoS=N/A
-   DefaultTime=5-00:00:00 DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
-   MaxNodes=1 MaxTime=5-00:00:00 MinNodes=1 LLN=NO MaxCPUsPerNode=UNLIMITED
-   Nodes=c[1-5]
-   PriorityJobFactor=50 PriorityTier=50 RootOnly=NO ReqResv=NO OverSubscribe=NO PreemptMode=OFF
-   State=UP TotalCPUs=5 TotalNodes=5 SelectTypeParameters=NONE
-   DefMemPerCPU=500 MaxMemPerNode=UNLIMITED
+### Join a node within the container
+open another terminal inside the container, join a new node to partition `f1Feature`
+
+```bash
+slurmd -Z --conf "Feature=f1" --conf-server localhost:6817 -N dynamic_1
 ```
 
-### Slurm Dynamic Nodes
+After that, you should see the node using `sinfo`
 
-Since Slurm 22.05, nodes can be dynamically added and removed from Slurm.
-
-#### Usage
-
-
-
-## Building
-
-### Using Existing Tags
-
-There are multiple versions of Slurm available, each with its own tag.  To build
-a specific version of Slurm, checkout the tag that matches that version and
-build the Dockerfile:
-
-```shell
-git clone https://github.com/giovtorres/docker-centos7-slurm
-git checkout <tag>
-docker build -t docker-centos7-slurm .
+```bash
+PARTITION  AVAIL  TIMELIMIT  NODES  STATE NODELIST
+debug         up 5-00:00:00      2   idle c[3-4]
+normal        up 5-00:00:00      2   idle c[1-2]
+f1Feature*    up   infinite      1   idle dynamic_1
 ```
 
-### Using Build Args
+### Join a node from host
 
-You can use docker's `--build-arg` option to customize the version of Slurm
-and the version(s) of Python at build time.
+Be sure that `slurmd` is installed in host env and the version is `22.05` or later
 
-To specify the version of Slurm, assign a valid Slurm tag to the `SLURM_TAG`
-build argument:
+Run commands below in host environment
 
-```shell
-docker build --build-arg SLURM_TAG="slurm-19-05-1-2" -t docker-centos7-slurm:19.05.1-2
-```
-
-To specify the version(s) of Python to include in the container, specify a
-space-delimited string of Python versions using the `PYTHON_VERSIONS` build
-argument:
-
-```shell
-docker build --build-arg PYTHON_VERSIONS="3.6 3.7" -t docker-centos7-slurm:py3
-```
-
-## Using docker-compose
-
-The included docker-compose file will run the cluster container in the
-background.  The docker-compose file uses data volumes to store the slurm state
-between container runs.  To start the cluster container, run:
-
-```shell
-docker-compose up -d
-```
-
-To execute commands in the container, use `docker exec`:
-
-```shell
-docker exec dockercentos7slurm_slurm_1 sinfo
-PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
-normal*      up 5-00:00:00      5   idle c[1-5]
-debug        up 5-00:00:00      5   idle c[6-10]
-
-docker exec dockercentos7slurm_slurm_1 sbatch --wrap="sleep 10"
-Submitted batch job 27
-
-docker exec dockercentos7slurm_slurm_1 squeue
-            JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
-            27    normal     wrap     root  R       0:07      1 c1
-```
-
-To attach to the bash shell inside the running container, run:
-
-```shell
-docker attach dockercentos7slurm_slurm_1
-```
-
-Press `Ctrl-p,Ctrl-q` to detach from the container without killing the bash
-process and stopping the container.
-
-To stop the cluster container, run:
-
-```shell
-docker-compose down
-```
-
-## Testing Locally
-
-[Testinfra](https://testinfra.readthedocs.io/en/latest/index.html) is used to
-build and run a Docker container test fixture. Run the tests with
-[pytest](https://docs.pytest.org/en/latest/):
-
-```shell
-pytest -v
+```bash
+slurmd -Z --conf "Feature=f1" --conf-server localhost:38125 -N dynamic_1 -Dvvvv
 ```
